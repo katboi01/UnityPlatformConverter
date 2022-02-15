@@ -78,10 +78,10 @@ namespace UnityPlatformConverter
 
                 File.Delete(selectedFile + "_temp");
                 am.UnloadAll(); //delete this if something breaks
-
-                Console.WriteLine("Work finished, press enter...");
-                Console.ReadLine();
             }
+
+            Console.WriteLine("Work finished, press enter...");
+            Console.ReadLine();
         }
 
         public static AssetBundleFile DecompressToMemory(BundleFileInstance bundleInst)
