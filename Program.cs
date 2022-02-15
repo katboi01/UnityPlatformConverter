@@ -56,7 +56,8 @@ namespace UnityPlatformConverter
             BundleReplacerFromMemory bunRepl = new BundleReplacerFromMemory(inst.name, null, true, newAssetData, -1);
 
             //write a modified file (temp)
-            using (var stream = File.OpenWrite(selectedFile + "_temp"))
+            string tempFile = Path.GetTempFileName();
+            using (var stream = File.OpenWrite(tempFile))
             using (var writer = new AssetsFileWriter(stream))
             {
                 bundleInst.file.Write(writer, new List<BundleReplacer>() { bunRepl });
@@ -64,7 +65,7 @@ namespace UnityPlatformConverter
             bundleInst.file.Close();
 
             //load the modified file for compression
-            bundleInst = am.LoadBundleFile(selectedFile + "_temp");
+            bundleInst = am.LoadBundleFile(tempFile);
             using (var stream = File.OpenWrite(output))
             using (var writer = new AssetsFileWriter(stream))
             {
@@ -72,7 +73,7 @@ namespace UnityPlatformConverter
             }
             bundleInst.file.Close();
 
-            File.Delete(selectedFile + "_temp");
+            File.Delete(tempFile);
             Console.WriteLine("complete");
             am.UnloadAll(); //delete this if something breaks
         }
