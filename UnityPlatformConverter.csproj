@@ -9,4 +9,10 @@
     <PackageReference Include="AssetsTools.NET" Version="2.0.11" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="classdata.tpk">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
