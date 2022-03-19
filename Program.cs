@@ -13,19 +13,21 @@ namespace UnityPlatformConverter
         static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
-            if (args.Length != 2)
+            if (args.Length != 3)
             {
-                Console.WriteLine("Not enough parameters. Expected input: path_to_.exe inputFilePath outputFilePath");
+                Console.WriteLine("UnityPlatformConverter by Katboi01");
+                Console.WriteLine("Not enough parameters. Expected input: path_to_.exe targetPlatformID inputFilePath outputFilePath");
+                Console.WriteLine("Common platforms: 5-pc 13-android 20-webgl");
                 Console.Read();
             }
             else
             {
                 Program p = new Program();
-                p.ChangeVersion(args[0], args[1]);
+                p.ChangeVersion(args[0], args[1], args[2]);
             }
         }
 
-        private void ChangeVersion(string input, string output)
+        private void ChangeVersion(string platformId, string input, string output)
         {
             am = new AssetsManager();
             am.LoadClassPackage(Path.Combine(Environment.CurrentDirectory, @"classdata.tpk"));
@@ -40,7 +42,7 @@ namespace UnityPlatformConverter
             AssetsFileInstance inst = am.LoadAssetsFileFromBundle(bundleInst, 0);
             am.LoadClassDatabaseFromPackage(inst.file.typeTree.unityVersion);
 
-            inst.file.typeTree.version = 20; //5-pc //6-android? //20-webgl
+            inst.file.typeTree.version = (uint)int.Parse(platformId); //5-pc //13-android //20-webgl
 
             //commit changes
             byte[] newAssetData;
