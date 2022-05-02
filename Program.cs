@@ -59,10 +59,18 @@ namespace UnityPlatformConverter
 
             //Load file
             string selectedFile = input;
-            BundleFileInstance bundleInst = am.LoadBundleFile(selectedFile, false);
-
-            //Decompress the file to memory
-            bundleInst.file = DecompressToMemory(bundleInst);
+            BundleFileInstance bundleInst = null;
+            try
+            {
+                bundleInst = am.LoadBundleFile(selectedFile, false);
+                //Decompress the file to memory
+                bundleInst.file = DecompressToMemory(bundleInst);
+            }
+            catch
+            {
+                if (!silent) Console.WriteLine($"Error: {Path.GetFileName(selectedFile)} is not a valid bundle file");
+                return;
+            }
 
             AssetsFileInstance inst = am.LoadAssetsFileFromBundle(bundleInst, 0);
             am.LoadClassDatabaseFromPackage(inst.file.typeTree.unityVersion);
@@ -121,15 +129,14 @@ namespace UnityPlatformConverter
                 try
                 {
                     bundleInst = am.LoadBundleFile(selectedFile, false);
+                    //Decompress the file to memory
+                    bundleInst.file = DecompressToMemory(bundleInst);
                 }
                 catch
                 {
-                    Console.WriteLine($"Error: {Path.GetFileName(selectedFile)} is not a valid bundle file");
+                    if (!silent) Console.WriteLine($"Error: {Path.GetFileName(selectedFile)} is not a valid bundle file");
                     continue;
                 }
-
-                //Decompress the file to memory
-                bundleInst.file = DecompressToMemory(bundleInst);
 
                 AssetsFileInstance inst = am.LoadAssetsFileFromBundle(bundleInst, 0);
                 am.LoadClassDatabaseFromPackage(inst.file.typeTree.unityVersion);
