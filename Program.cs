@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using CommandLine;
@@ -34,6 +35,8 @@ namespace UnityPlatformConverter
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
+            Program p = new Program();
+
             Parser.Default.ParseArguments<Options>(args)
                    .WithParsed<Options>(o =>
                    {
@@ -48,14 +51,14 @@ namespace UnityPlatformConverter
                            p.ChangeFileVersion(o.Platform, o.Input, o.Output, o.Silent);
                        }
                    });
-
-            //p.FixPath(args[0], args[1], args[2]);
         }
 
         private void ChangeFileVersion(int platformId, string input, string output, bool silent)
         {
             am = new AssetsManager();
-            am.LoadClassPackage(Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), @"classdata.tpk"));
+            var assembly = Assembly.GetExecutingAssembly();
+            string resourceName = assembly.GetManifestResourceNames().Single(str => str.EndsWith("classdata.tpk"));
+            am.LoadClassPackage(assembly.GetManifestResourceStream(resourceName));
 
             //Load file
             string selectedFile = input;
@@ -73,9 +76,9 @@ namespace UnityPlatformConverter
             }
 
             AssetsFileInstance inst = am.LoadAssetsFileFromBundle(bundleInst, 0);
-            am.LoadClassDatabaseFromPackage(inst.file.typeTree.unityVersion);
+            am.LoadClassDatabaseFromPackage(inst.file.Metadata.UnityVersion);
 
-            inst.file.typeTree.version = (uint)platformId; //5-pc //13-android //20-webgl
+            inst.file.Metadata.TargetPlatform = (uint)platformId; //5-pc //13-android //20-webgl
 
             //commit changes
             byte[] newAssetData;
@@ -83,7 +86,7 @@ namespace UnityPlatformConverter
             {
                 using (AssetsFileWriter writer = new AssetsFileWriter(stream))
                 {
-                    inst.file.Write(writer, 0, new List<AssetsReplacer>() { }, 0);
+                    inst.file.Write(writer, 0, new List<AssetsReplacer>() { });
                     newAssetData = stream.ToArray();
                 }
             }
@@ -104,7 +107,7 @@ namespace UnityPlatformConverter
             using (var stream = File.OpenWrite(output))
             using (var writer = new AssetsFileWriter(stream))
             {
-                bundleInst.file.Pack(bundleInst.file.reader, writer, AssetBundleCompressionType.LZ4);
+                bundleInst.file.Pack(bundleInst.file.Reader, writer, AssetBundleCompressionType.LZ4);
             }
             bundleInst.file.Close();
 
@@ -118,9 +121,22 @@ namespace UnityPlatformConverter
             Directory.CreateDirectory(outputDir);
 
             am = new AssetsManager();
-            am.LoadClassPackage(Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), @"classdata.tpk"));
-
-            foreach(var selectedFile in Directory.GetFiles(inputDir))
+            var assembly = Assembly.GetExecutingAssembly();
+            string resourceName = assembly.GetManifestResourceNames().SingleOrDefault(str => str.EndsWith("classdata.tpk"));
+            if (!string.IsNullOrEmpty(resourceName))
+            {
+                am.LoadClassPackage(assembly.GetManifestResourceStream(resourceName));
+            }
+            else
+            {
+                resourceName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "classdata.tpk");
+                if (!File.Exists(resourceName))
+                {
+                    throw new Exception("classdata.tpk is missing!");
+                }
+                am.LoadClassPackage(resourceName);
+            }
+            foreach (var selectedFile in Directory.GetFiles(inputDir))
             {
                 if (!silent) Console.WriteLine($"Converting {Path.GetFileName(selectedFile)}");
 
@@ -139,9 +155,9 @@ namespace UnityPlatformConverter
                 }
 
                 AssetsFileInstance inst = am.LoadAssetsFileFromBundle(bundleInst, 0);
-                am.LoadClassDatabaseFromPackage(inst.file.typeTree.unityVersion);
+                am.LoadClassDatabaseFromPackage(inst.file.Metadata.UnityVersion);
 
-                inst.file.typeTree.version = (uint)platformId; //5-pc //13-android //20-webgl
+                inst.file.Metadata.TargetPlatform = (uint)platformId; //5-pc //13-android //20-webgl
 
                 //commit changes
                 byte[] newAssetData;
@@ -149,7 +165,7 @@ namespace UnityPlatformConverter
                 {
                     using (AssetsFileWriter writer = new AssetsFileWriter(stream))
                     {
-                        inst.file.Write(writer, 0, new List<AssetsReplacer>() { }, 0);
+                        inst.file.Write(writer, 0, new List<AssetsReplacer>() { });
                         newAssetData = stream.ToArray();
                     }
                 }
@@ -170,7 +186,7 @@ namespace UnityPlatformConverter
                 using (var stream = File.OpenWrite(Path.Combine(outputDir, Path.GetFileName(selectedFile))))
                 using (var writer = new AssetsFileWriter(stream))
                 {
-                    bundleInst.file.Pack(bundleInst.file.reader, writer, AssetBundleCompressionType.LZ4);
+                    bundleInst.file.Pack(bundleInst.file.Reader, writer, AssetBundleCompressionType.LZ4);
                 }
                 bundleInst.file.Close();
 
@@ -185,14 +201,14 @@ namespace UnityPlatformConverter
             AssetBundleFile bundle = bundleInst.file;
 
             MemoryStream bundleStream = new MemoryStream();
-            bundle.Unpack(bundle.reader, new AssetsFileWriter(bundleStream));
+            bundle.Unpack(new AssetsFileWriter(bundleStream));
 
             bundleStream.Position = 0;
 
             AssetBundleFile newBundle = new AssetBundleFile();
-            newBundle.Read(new AssetsFileReader(bundleStream), false);
+            newBundle.Read(new AssetsFileReader(bundleStream));
 
-            bundle.reader.Close();
+            bundle.Reader.Close();
             return newBundle;
         }
     }
