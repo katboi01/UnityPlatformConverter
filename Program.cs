@@ -56,9 +56,7 @@ namespace UnityPlatformConverter
         private void ChangeFileVersion(int platformId, string input, string output, bool silent)
         {
             am = new AssetsManager();
-            var assembly = Assembly.GetExecutingAssembly();
-            string resourceName = assembly.GetManifestResourceNames().Single(str => str.EndsWith("classdata.tpk"));
-            am.LoadClassPackage(assembly.GetManifestResourceStream(resourceName));
+            am.LoadClassPackage(Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), @"classdata.tpk"));
 
             //Load file
             string selectedFile = input;
@@ -121,21 +119,7 @@ namespace UnityPlatformConverter
             Directory.CreateDirectory(outputDir);
 
             am = new AssetsManager();
-            var assembly = Assembly.GetExecutingAssembly();
-            string resourceName = assembly.GetManifestResourceNames().SingleOrDefault(str => str.EndsWith("classdata.tpk"));
-            if (!string.IsNullOrEmpty(resourceName))
-            {
-                am.LoadClassPackage(assembly.GetManifestResourceStream(resourceName));
-            }
-            else
-            {
-                resourceName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "classdata.tpk");
-                if (!File.Exists(resourceName))
-                {
-                    throw new Exception("classdata.tpk is missing!");
-                }
-                am.LoadClassPackage(resourceName);
-            }
+            am.LoadClassPackage(Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), @"classdata.tpk"));
             foreach (var selectedFile in Directory.GetFiles(inputDir))
             {
                 if (!silent) Console.WriteLine($"Converting {Path.GetFileName(selectedFile)}");
