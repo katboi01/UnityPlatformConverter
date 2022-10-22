@@ -10,3 +10,5 @@ For quickly converting unity files between platforms. It only makes the files re
   -i, --input            - Required. input file/directory with extension
 
   -o, --output           - Required. output file/directory with extension
+  
+  -t, --threads          enables multithread mode, set number of threads
